@@ -269,6 +269,33 @@ function drawSeal(ctx, text, w, h) {
   ctx.restore();
 }
 
+/** A small gold-ringed monogram emblem where the panels meet, like a poster badge. */
+function drawEmblem(ctx, layout, w, areaH) {
+  if (layout === 'single') return;
+  const cx = layout === 'grid' ? w * 0.5 : w * 0.64;
+  const cy = areaH * 0.5;
+  const r = Math.max(16, w * 0.032);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(16, 8, 24, 0.92)';
+  ctx.fill();
+  ctx.lineWidth = Math.max(2, r * 0.09);
+  ctx.strokeStyle = '#ffd23f';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.78, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255, 210, 63, 0.6)';
+  ctx.lineWidth = Math.max(1, r * 0.04);
+  ctx.stroke();
+  ctx.fillStyle = '#ffd23f';
+  ctx.font = `${r * 0.72}px Anton, 'Arial Narrow', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('VN', cx, cy + r * 0.04);
+  ctx.restore();
+}
+
 /** Draws the whole cover onto the canvas. */
 export function drawCover(canvas, state) {
   const ctx = canvas.getContext('2d');
@@ -315,6 +342,9 @@ export function drawCover(canvas, state) {
     ctx.stroke();
     ctx.restore();
   });
+
+  // Monogram emblem where the panels meet.
+  drawEmblem(ctx, state.layout, w, areaH);
 
   // A gold rule above the caption band.
   ctx.fillStyle = '#ffd23f';

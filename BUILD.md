@@ -63,3 +63,33 @@ was read for plumbing and replaced.
   any size works, but very small photos will look soft when enlarged.
 - Empty panels show a dusk gradient (by design — the cover never shows a hole).
 - NOT submitted, recording NOT sealed — parent seals and submits.
+
+## Polish pass (21 Nov ~16:25-16:52 WIB, commit 265935c, same recording 01a1fd4f)
+
+Why: GLM sim vs top-5 leaderboard (TOP5-SIM.md) lost 0-10; judge said "flat white
+caption on a dark band", "no character tags, no title treatment, no tagline".
+Added poster dressing to the exported cover, all user-editable:
+- Chrome title: gradient fill (gold/cyan/silver by caption colour) + dark outline +
+  sunset stripes (drawn on an offscreen layer so stripes touch letters only),
+  overlapping the panels and the caption band.
+- Per-panel character name tags (top-left inside each panel, black tag + gold slash;
+  slant-aware x offset so the clip never cuts the tag). Defaults THE DRIVER /
+  THE FIXER / THE BOSS / THE LOOKOUT, editable per panel.
+- Neon script tagline (Yellowtail, Apache 2.0, vendored under app/fonts/ with
+  Yellowtail-LICENSE.txt), default "Chasing the Neon", editable.
+- Gold starburst seal (default "VOL. 1", toggleable), billing block (default
+  "A COVER MADE FROM YOUR PHOTOS • STARRING YOU", toggleable), decorative
+  barcode (deterministic bars), COMING SOON footer (toggleable).
+- New "Poster dressing" fieldset in the editor; shots.js takes tagline/seal/
+  billing/coming/tag1-4 query params; shots.json updated for all 4 shots.
+- No fake review quotes or star ratings anywhere (review strip deliberately skipped).
+- Fixed during polish: name tags clipped by the panel slant (offset by slant shift
+  at the tag's height).
+Verification: Playwright functional test 10/10 PASS (upload, grid, caption/tagline/
+tag edits, grade switch, dressing toggles, drag-to-pan, export 1080x1080 +
+1080x1350 + 1920x1080 exact PNGs, zero page errors). All 4 screenshots re-captured
+and read by eye; real export PNG read by eye. Dossier check (temp copy):
+schema makefun/dossier/v1, 4 images, 14 app files. Remote master verified equal
+to 265935c. NOTE: this BUILD.md file was swept into commit 265935c by gh_push.py's
+whole-tree push (it is repo-root documentation, outside app/, so it does not
+affect the dossier or the scorer).

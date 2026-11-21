@@ -76,6 +76,8 @@ function buildPanelRows() {
       <span class="sample-buttons">
         <button type="button" data-sample="boulevard" data-panel="${i}">Boulevard</button>
         <button type="button" data-sample="pier" data-panel="${i}">Pier</button>
+        <button type="button" data-sample="neon-street" data-panel="${i}">Neon Street</button>
+        <button type="button" data-sample="motel-pool" data-panel="${i}">Motel Pool</button>
       </span>
       <label>Character tag <input type="text" maxlength="16" value="${(state.panels[i].tag ?? TAG_DEFAULTS[i]).replace(/"/g, '&quot;')}" data-tag="${i}"></label>
       <label>Zoom <input type="range" min="1" max="2.5" step="0.05" value="${state.panels[i].zoom}" data-zoom="${i}"></label>`;
