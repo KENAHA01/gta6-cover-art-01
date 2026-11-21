@@ -5,6 +5,13 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'Yellowtail';
+  src: url('./fonts/Yellowtail-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 html, body { margin: 0; min-height: 100%; background: #0e0a14; color: #f5f0ff; font: 15px/1.45 system-ui, sans-serif; }
 .app { display: flex; gap: 28px; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 24px; box-sizing: border-box; }
@@ -26,6 +33,9 @@ button:hover { filter: brightness(1.08); }
 .colors button.active { border-color: #ffd23f; }
 .panel-row { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid #3a2b52; border-radius: 8px; margin-bottom: 8px; background: #160f22; }
 .panel-row .panel-name { font-weight: 700; color: #ffd23f; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row input[type=text] { flex: 1; min-width: 0; }
+.inline { display: flex !important; flex-direction: row !important; gap: 8px; align-items: center; font-weight: 400; white-space: nowrap; }
 .sample-buttons { display: flex; gap: 8px; }
 .sample-buttons button { flex: 1; background: #2b1d44; color: #f5f0ff; padding: 7px 4px; font-weight: 600; }
 .hint, .fine { margin: 0; color: #8d81a8; font-size: 13px; }

@@ -33,9 +33,17 @@
       <button type="button" data-color="#00e5ff" style="--sw: #00e5ff" aria-label="Cyan caption">Cyan</button>
     </div>
 
+    <fieldset>
+      <legend>Poster dressing</legend>
+      <label>Tagline <input id="tagline" type="text" maxlength="40" value="Chasing the Neon"></label>
+      <div class="row"><label class="inline"><input id="show-seal" type="checkbox" checked> Seal</label><input id="seal" type="text" maxlength="12" value="VOL. 1"></div>
+      <div class="row"><label class="inline"><input id="show-billing" type="checkbox" checked> Billing</label><input id="billing" type="text" maxlength="60" value="A COVER MADE FROM YOUR PHOTOS • STARRING YOU"></div>
+      <label class="inline"><input id="coming-soon" type="checkbox" checked> COMING SOON footer</label>
+    </fieldset>
+
     <div id="panels"></div>
     <button id="same-photo" type="button">Use one photo in every panel</button>
-    <p class="hint">Drag a panel on the cover to move its photo. The zoom slider enlarges it.</p>
+    <p class="hint">Drag a panel on the cover to move its photo. The zoom slider enlarges it. The tag box names the character in that panel.</p>
 
     <label>Export size
       <select id="size">
@@ -46,7 +54,7 @@
     </label>
     <button id="export" type="button">Export PNG</button>
     <p id="status" role="status"></p>
-    <p class="fine">Photos are read on your machine and never uploaded. No Rockstar artwork, logos or fonts: the lettering is Anton, an open-licensed display face.</p>
+    <p class="fine">Photos are read on your machine and never uploaded. No Rockstar artwork, logos or fonts: the lettering is Anton, an open-licensed display face, and Yellowtail for the tagline, under the Apache 2.0 licence.</p>
   </section>
   <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
 </main>

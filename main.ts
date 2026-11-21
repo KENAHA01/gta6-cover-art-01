@@ -3,9 +3,11 @@
 // request), and the program hands it in. It copies app/ and screenshots/ from beside this file to /output and writes
 // /output/dossier.json, the summary the judge reads, with the vendored make.fun library. The app itself is Vice
 // Nights: a cover maker that turns the user's own photos into multi-panel GTA-style cover art — slanted panels with
-// white gutters, a Vice City sunset or neon grade, and the caption in big condensed Anton capitals — and exports it
-// as a PNG in 1080 x 1080, 1080 x 1350 or 1920 x 1080. Its two sample photos (app/samples/) were made for make.fun
-// with an image model and are free to use; the lettering is Anton, an open-licensed display face under app/fonts/.
+// white gutters, a Vice City sunset or neon grade, a chrome gradient title with sunset stripes, a neon script tagline,
+// a character name tag on every panel, a gold seal, a billing block and a barcode — and exports it as a PNG in
+// 1080 x 1080, 1080 x 1350 or 1920 x 1080. Its two sample photos (app/samples/) were made for make.fun with an image
+// model and are free to use; the lettering is Anton, an open-licensed display face under app/fonts/, and Yellowtail
+// for the tagline, under the Apache 2.0 licence.
 // Put your 3 or 4 PNG or JPEG screenshots in screenshots/ (the first by name is the cover) and run it.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.

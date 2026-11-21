@@ -1,20 +1,29 @@
 // Draws a GTA-style multi-panel cover: slanted panels with white gutters, a Vice City
-// sunset or neon grade, and the caption in big condensed capitals across the foot.
-// Everything is drawn on the canvas's 2D context, at the canvas's own size, so the same
-// code renders the on-screen preview and every export size.
+// sunset or neon grade, and movie-poster dressing — a chrome gradient title that
+// overlaps the panels, a neon script tagline, a character name tag on every panel,
+// a gold seal, a billing block and a barcode — all drawn on the canvas's 2D context,
+// at the canvas's own size, so the same code renders the on-screen preview and every
+// export size.
 //
 // state = {
 //   layout: 'hero' | 'grid' | 'single',
 //   grade: 'sunset' | 'neon' | 'none',
 //   caption: string,
-//   captionColor: css color,
-//   panels: [{ img: Image|null, zoom: number, ox: number, oy: number }]  // ox/oy in panel fractions
+//   captionColor: css color (the chrome base: white, gold or cyan),
+//   tagline: string,            // neon script line under the title, editable
+//   seal: string, showSeal: boolean,
+//   billing: string, showBilling: boolean,
+//   comingSoon: boolean,
+//   panels: [{ img: Image|null, zoom: number, ox: number, oy: number, tag: string }]
 // }
 // A panel's ox/oy shift its photo inside the panel; zoom scales it. All three are clamped
 // so the photo always covers its panel.
 
-const CAPTION_BAND = 0.2; // bottom fifth of the cover carries the caption
+const CAPTION_BAND = 0.2; // bottom fifth of the cover carries the title's foot and billing
 const GUTTER = 0.012; // white gutter between panels, as a fraction of cover width
+
+/** Default character tag per panel index. */
+export const TAG_DEFAULTS = ['THE DRIVER', 'THE FIXER', 'THE BOSS', 'THE LOOKOUT'];
 
 /** Panel rectangles for a layout, as fractions of the panel area (x, y, w, h). */
 export function layoutPanels(layout) {
@@ -89,6 +98,177 @@ function gradePanel(ctx, rect, grade) {
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 }
 
+/** A character name tag at the top-left inside a panel: black tag, gold slash.
+ *  The panel's left edge slants right toward the top, so the tag starts after the
+ *  slant shift at its own height, or the clip would cut its left end off. */
+function drawNameTag(ctx, rect, tag, w, slant) {
+  const text = (tag || '').trim().toUpperCase();
+  if (!text) return;
+  const fs = Math.max(13, w * 0.02);
+  ctx.font = `${fs}px Anton, 'Arial Narrow', sans-serif`;
+  const padX = fs * 0.55;
+  const tw = ctx.measureText(text).width;
+  const tagH = fs * 1.85;
+  const slashW = Math.max(3, fs * 0.22);
+  const tagW = tw + padX * 2 + slashW;
+  const inset = Math.max(6, w * 0.008);
+  const cy = rect.y + inset + tagH / 2;
+  const shift = slant * (1 - (cy - rect.y) / rect.h);
+  const x = rect.x + shift + inset;
+  const y = rect.y + inset;
+  ctx.fillStyle = 'rgba(8, 6, 14, 0.85)';
+  ctx.fillRect(x, y, tagW, tagH);
+  ctx.fillStyle = '#ffd23f';
+  ctx.fillRect(x, y, slashW, tagH);
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + slashW + padX, y + tagH / 2 + fs * 0.04);
+}
+
+/** Chrome gradient for the title, from the chosen caption colour base. */
+function chromeGradient(ctx, top, bottom, base) {
+  const g = ctx.createLinearGradient(0, top, 0, bottom);
+  if (base === '#ffd23f') {
+    // gold chrome: pale gold over orange into hot pink
+    g.addColorStop(0, '#fff8d0');
+    g.addColorStop(0.35, '#ffd23f');
+    g.addColorStop(0.6, '#ff8a3c');
+    g.addColorStop(0.82, '#ff3d7e');
+    g.addColorStop(1, '#c9184a');
+  } else if (base === '#00e5ff') {
+    // cyan chrome: ice over cyan into violet and magenta
+    g.addColorStop(0, '#e6fbff');
+    g.addColorStop(0.35, '#00e5ff');
+    g.addColorStop(0.6, '#7b5cff');
+    g.addColorStop(0.82, '#ff2d92');
+    g.addColorStop(1, '#b5179e');
+  } else {
+    // silver chrome: white over steel blue
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.4, '#e8eefc');
+    g.addColorStop(0.65, '#aebfe0');
+    g.addColorStop(0.85, '#7e93c4');
+    g.addColorStop(1, '#5b6b96');
+  }
+  return g;
+}
+
+/** The title in chrome letters with sunset stripes, drawn on its own layer so the
+ *  stripes only touch the letters, then stamped over the cover with a glow. */
+function drawChromeTitle(ctx, text, w, h, areaH, base) {
+  let size = h * 0.115;
+  ctx.font = `${size}px Anton, 'Arial Narrow', sans-serif`;
+  while (ctx.measureText(text).width > w * 0.94 && size > 12) {
+    size -= 2;
+    ctx.font = `${size}px Anton, 'Arial Narrow', sans-serif`;
+  }
+  // The title straddles the panel area and the caption band, like a poster title
+  // printed over the artwork.
+  const cy = areaH - size * 0.32;
+  const top = cy - size * 0.52;
+  const bottom = cy + size * 0.52;
+  const layer = document.createElement('canvas');
+  layer.width = Math.max(1, Math.ceil(w));
+  layer.height = Math.max(1, Math.ceil(bottom - top));
+  const lctx = layer.getContext('2d');
+  lctx.font = `${size}px Anton, 'Arial Narrow', sans-serif`;
+  lctx.textAlign = 'center';
+  lctx.textBaseline = 'middle';
+  lctx.lineJoin = 'round';
+  lctx.strokeStyle = 'rgba(10, 4, 18, 0.9)';
+  lctx.lineWidth = Math.max(2, size * 0.07);
+  lctx.strokeText(text, w / 2, layer.height / 2);
+  lctx.fillStyle = chromeGradient(lctx, 0, layer.height, base);
+  lctx.fillText(text, w / 2, layer.height / 2);
+  // Sunset stripes across the letters only.
+  lctx.globalCompositeOperation = 'source-atop';
+  lctx.fillStyle = 'rgba(24, 8, 32, 0.22)';
+  const stripeH = size * 0.09;
+  for (const f of [0.32, 0.56, 0.8]) {
+    lctx.fillRect(0, layer.height * f, w, stripeH);
+  }
+  lctx.globalCompositeOperation = 'source-over';
+  ctx.save();
+  ctx.shadowColor = 'rgba(255, 80, 170, 0.5)';
+  ctx.shadowBlur = size * 0.1;
+  ctx.shadowOffsetY = size * 0.02;
+  ctx.drawImage(layer, 0, top);
+  ctx.restore();
+}
+
+/** A small deterministic pseudo-random stream, so the barcode is the same every run. */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** A decorative barcode: black bars on white, with a small number under them. */
+function drawBarcode(ctx, x, y, bw, bh) {
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, bw, bh);
+  const rnd = mulberry32(10472);
+  const barH = bh * 0.68;
+  let bx = x + bw * 0.06;
+  ctx.fillStyle = '#111111';
+  while (bx < x + bw * 0.94) {
+    const barW = 1 + Math.floor(rnd() * 3) * Math.max(1, bw * 0.003);
+    const gap = Math.max(1, bw * 0.008) * (1 + Math.floor(rnd() * 3));
+    ctx.fillRect(bx, y + bh * 0.08, Math.min(barW, x + bw * 0.94 - bx), barH);
+    bx += barW + gap;
+  }
+  ctx.fillStyle = '#111111';
+  ctx.font = `${Math.max(7, bh * 0.16)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('0 10472 85991', x + bw / 2, y + bh * 0.87);
+}
+
+/** A gold starburst seal with the seal text inside, tilted like a sticker. */
+function drawSeal(ctx, text, w, h) {
+  const cx = w * 0.935;
+  const cy = h * 0.062;
+  const r = w * 0.05;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(-0.18);
+  ctx.beginPath();
+  const spikes = 24;
+  for (let i = 0; i < spikes * 2; i++) {
+    const ang = (i / (spikes * 2)) * Math.PI * 2;
+    const rr = i % 2 === 0 ? r : r * 0.88;
+    const px = Math.cos(ang) * rr;
+    const py = Math.sin(ang) * rr;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#f2b705';
+  ctx.fill();
+  ctx.strokeStyle = '#a86e00';
+  ctx.lineWidth = Math.max(1.5, r * 0.05);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.74, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(36, 16, 49, 0.55)';
+  ctx.lineWidth = Math.max(1, r * 0.03);
+  ctx.stroke();
+  const lines = (text || '').trim().toUpperCase().split(/\s+/).slice(0, 2);
+  ctx.fillStyle = '#241031';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const fs = r * 0.36;
+  ctx.font = `${fs}px Anton, 'Arial Narrow', sans-serif`;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, 0, (i - (lines.length - 1) / 2) * fs * 1.05);
+  });
+  ctx.restore();
+}
+
 /** Draws the whole cover onto the canvas. */
 export function drawCover(canvas, state) {
   const ctx = canvas.getContext('2d');
@@ -104,7 +284,7 @@ export function drawCover(canvas, state) {
 
   const rects = layoutPanels(state.layout);
   rects.forEach((cell, i) => {
-    const panel = state.panels[i] || { img: null, zoom: 1, ox: 0, oy: 0 };
+    const panel = state.panels[i] || { img: null, zoom: 1, ox: 0, oy: 0, tag: TAG_DEFAULTS[i] };
     const rect = {
       x: cell.x * w + gutter / 2,
       y: cell.y * areaH + gutter / 2,
@@ -125,6 +305,7 @@ export function drawCover(canvas, state) {
       ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     }
     gradePanel(ctx, rect, state.grade);
+    drawNameTag(ctx, rect, panel.tag, w, slant);
     ctx.restore();
     // White frame around the panel, following its slant.
     ctx.save();
@@ -139,36 +320,73 @@ export function drawCover(canvas, state) {
   ctx.fillStyle = '#ffd23f';
   ctx.fillRect(0, areaH - Math.max(3, h * 0.004), w, Math.max(3, h * 0.004));
 
-  // Caption band: deep plum, caption in big condensed capitals.
+  // Caption band: deep plum.
   const band = ctx.createLinearGradient(0, areaH, 0, h);
   band.addColorStop(0, '#241031');
   band.addColorStop(1, '#12081c');
   ctx.fillStyle = band;
   ctx.fillRect(0, areaH, w, h - areaH);
 
+  // Chrome title, straddling the panels and the band.
   const text = (state.caption || '').trim().toUpperCase();
-  if (text) {
-    let size = (h - areaH) * 0.74;
-    ctx.font = `${size}px Anton, 'Arial Narrow', sans-serif`;
-    while (ctx.measureText(text).width > w * 0.92 && size > 12) {
+  if (text) drawChromeTitle(ctx, text, w, h, areaH, state.captionColor || '#ffffff');
+
+  // Neon script tagline under the title.
+  const tagline = (state.tagline || '').trim();
+  if (tagline) {
+    let size = h * 0.048;
+    ctx.font = `${size}px Yellowtail, cursive`;
+    while (ctx.measureText(tagline).width > w * 0.86 && size > 10) {
       size -= 2;
-      ctx.font = `${size}px Anton, 'Arial Narrow', sans-serif`;
+      ctx.font = `${size}px Yellowtail, cursive`;
     }
+    ctx.save();
+    ctx.translate(w / 2, areaH + (h - areaH) * 0.36);
+    ctx.rotate(-0.035);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = state.captionColor || '#ffffff';
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.lineWidth = Math.max(2, size * 0.055);
-    ctx.lineJoin = 'round';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
-    ctx.shadowBlur = size * 0.12;
-    ctx.shadowOffsetY = size * 0.03;
-    const cy = areaH + (h - areaH) / 2;
-    ctx.strokeText(text, w / 2, cy);
-    ctx.fillText(text, w / 2, cy);
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.fillStyle = '#ff6eb4';
+    ctx.shadowColor = 'rgba(255, 45, 146, 0.8)';
+    ctx.shadowBlur = size * 0.45;
+    ctx.fillText(tagline, 0, 0);
+    ctx.restore();
   }
+
+  // Billing strip along the very bottom: COMING SOON, billing line, barcode.
+  const stripY = h * 0.962;
+  const stripH = h * 0.032;
+  if (state.comingSoon) {
+    ctx.font = `${Math.max(11, h * 0.02)}px Anton, 'Arial Narrow', sans-serif`;
+    ctx.fillStyle = '#ffd23f';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('C O M I N G   S O O N', w * 0.03, stripY);
+  }
+  const barcodeW = w * 0.085;
+  const barcodeX = w * 0.97 - barcodeW;
+  const barcodeY = stripY - stripH / 2;
+  if (state.showBilling || state.comingSoon) drawBarcode(ctx, barcodeX, barcodeY, barcodeW, stripH);
+  if (state.showBilling) {
+    const billing = (state.billing || '').trim();
+    if (billing) {
+      const left = state.comingSoon ? w * 0.03 + ctx.measureText('C O M I N G   S O O N').width + w * 0.03 : w * 0.03;
+      const right = barcodeX - w * 0.02;
+      let size = Math.max(9, h * 0.0135);
+      ctx.font = `${size}px system-ui, sans-serif`;
+      while (ctx.measureText(billing).width > right - left && size > 8) {
+        size -= 1;
+        ctx.font = `${size}px system-ui, sans-serif`;
+      }
+      ctx.fillStyle = '#c9bfe0';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const cx = (left + right) / 2;
+      ctx.fillText(billing.length > 90 ? billing.slice(0, 87) + '...' : billing, cx, stripY);
+    }
+  }
+
+  // Gold seal, top-right over the panels.
+  if (state.showSeal && (state.seal || '').trim()) drawSeal(ctx, state.seal, w, h);
 
   // Vignette: darkens the corners so the panels read as one poster.
   const vig = ctx.createRadialGradient(

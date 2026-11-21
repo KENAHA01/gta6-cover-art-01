@@ -1,7 +1,8 @@
 // Wires the page: pick photos per panel, drag a panel to move its photo, type the caption,
-// choose a layout, a grade and an export size, and save the cover as a PNG. A `?shot=`
-// query sets up a fixed scene for a screenshot instead (./shots.js).
-import { drawCover, layoutPanels, panelAt, panelCount } from './cover.js';
+// choose a layout, a grade and an export size, dress the cover like a movie poster,
+// and save the cover as a PNG. A `?shot=` query sets up a fixed scene for a screenshot
+// instead (./shots.js).
+import { drawCover, layoutPanels, panelAt, panelCount, TAG_DEFAULTS } from './cover.js';
 import { runShot } from './shots.js';
 
 const SIZES = {
@@ -21,16 +22,25 @@ const state = {
   grade: 'sunset',
   caption: 'VICE NIGHTS',
   captionColor: '#ffffff',
+  tagline: 'Chasing the Neon',
+  seal: 'VOL. 1',
+  showSeal: true,
+  billing: 'A COVER MADE FROM YOUR PHOTOS • STARRING YOU',
+  showBilling: true,
+  comingSoon: true,
   panels: [
-    { img: null, zoom: 1, ox: 0, oy: 0 },
-    { img: null, zoom: 1, ox: 0, oy: 0 },
-    { img: null, zoom: 1, ox: 0, oy: 0 },
-    { img: null, zoom: 1, ox: 0, oy: 0 },
+    { img: null, zoom: 1, ox: 0, oy: 0, tag: TAG_DEFAULTS[0] },
+    { img: null, zoom: 1, ox: 0, oy: 0, tag: TAG_DEFAULTS[1] },
+    { img: null, zoom: 1, ox: 0, oy: 0, tag: TAG_DEFAULTS[2] },
+    { img: null, zoom: 1, ox: 0, oy: 0, tag: TAG_DEFAULTS[3] },
   ],
 };
 
 let fontsReady = false;
-document.fonts.load('100px Anton').then(() => { fontsReady = true; redraw(); });
+Promise.all([
+  document.fonts.load('100px Anton'),
+  document.fonts.load('40px Yellowtail'),
+]).then(() => { fontsReady = true; redraw(); });
 document.fonts.ready.then(() => { fontsReady = true; redraw(); });
 
 function redraw() {
@@ -53,7 +63,7 @@ export function loadImage(url) {
   });
 }
 
-/** Builds the per-panel photo rows (file input, sample buttons, zoom slider). */
+/** Builds the per-panel photo rows (file input, sample buttons, zoom slider, tag). */
 function buildPanelRows() {
   panelBox.innerHTML = '';
   const count = panelCount(state.layout);
@@ -67,6 +77,7 @@ function buildPanelRows() {
         <button type="button" data-sample="boulevard" data-panel="${i}">Boulevard</button>
         <button type="button" data-sample="pier" data-panel="${i}">Pier</button>
       </span>
+      <label>Character tag <input type="text" maxlength="16" value="${(state.panels[i].tag ?? TAG_DEFAULTS[i]).replace(/"/g, '&quot;')}" data-tag="${i}"></label>
       <label>Zoom <input type="range" min="1" max="2.5" step="0.05" value="${state.panels[i].zoom}" data-zoom="${i}"></label>`;
     panelBox.appendChild(row);
   }
@@ -93,6 +104,12 @@ function buildPanelRows() {
   panelBox.querySelectorAll('[data-zoom]').forEach((slider) => {
     slider.addEventListener('input', () => {
       state.panels[Number(slider.dataset.zoom)].zoom = Number(slider.value);
+      redraw();
+    });
+  });
+  panelBox.querySelectorAll('[data-tag]').forEach((input) => {
+    input.addEventListener('input', () => {
+      state.panels[Number(input.dataset.tag)].tag = input.value;
       redraw();
     });
   });
@@ -164,6 +181,33 @@ document.getElementById('same-photo').addEventListener('click', async () => {
 });
 captionInput.addEventListener('input', () => {
   state.caption = captionInput.value;
+  redraw();
+});
+const taglineInput = document.getElementById('tagline');
+taglineInput.addEventListener('input', () => {
+  state.tagline = taglineInput.value;
+  redraw();
+});
+const sealInput = document.getElementById('seal');
+sealInput.addEventListener('input', () => {
+  state.seal = sealInput.value;
+  redraw();
+});
+document.getElementById('show-seal').addEventListener('change', (e) => {
+  state.showSeal = e.target.checked;
+  redraw();
+});
+const billingInput = document.getElementById('billing');
+billingInput.addEventListener('input', () => {
+  state.billing = billingInput.value;
+  redraw();
+});
+document.getElementById('show-billing').addEventListener('change', (e) => {
+  state.showBilling = e.target.checked;
+  redraw();
+});
+document.getElementById('coming-soon').addEventListener('change', (e) => {
+  state.comingSoon = e.target.checked;
   redraw();
 });
 sizeSelect.addEventListener('change', applySize);
